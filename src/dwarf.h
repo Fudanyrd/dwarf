@@ -23,6 +23,10 @@ namespace Dwarf {
 // whitespaces
 auto Split(const std::string &str) -> std::vector<std::string>;
 
+// [Page 161]
+// returns the size of an uleb128 in bytes.
+extern size_t sizeof_uleb128(size_t value);
+
 static const char *author = "Fudanyrd:" __FILE__;
 static const char *date = __DATE__ ", " __TIME__;
 
@@ -599,11 +603,12 @@ class FormString: public Value {
     // .debug_abbrev
     *(meta_data->debug_abbrev) << "\t.uleb128 " 
       << static_cast<size_t>(DW_FORM::DW_FORM_string) << "\n";
-    meta_data->debug_abbrev_size += sizeof(uint128_t);
+    meta_data->debug_abbrev_size +=
+      sizeof_uleb128(static_cast<size_t>(DW_FORM::DW_FORM_string));
 
     // .debug_info
     assert(str_.size() >= 2);
-    *(meta_data->debug_info) << "\t.string " << EncodeString(this->str_) << "\n";
+    *(meta_data->debug_info) << "\t.string \"" << EncodeString(this->str_) << "\"\n";
     meta_data->debug_info_size += str_.size() + 1;
   }
 
@@ -627,14 +632,15 @@ class FormStrp: public Value {
     // .debug_abbrev
     *(meta_data->debug_abbrev) << "\t.uleb128 " 
       << static_cast<size_t>(DW_FORM::DW_FORM_strp) << "\n";
-    meta_data->debug_abbrev_size += sizeof(uint128_t);
+    meta_data->debug_abbrev_size +=
+      sizeof_uleb128(static_cast<size_t>(DW_FORM::DW_FORM_strp));
 
     // .debug_str
-    *(meta_data->debug_str) << ".LASF" << meta_data->debug_str_count << "\n";
-    *(meta_data->debug_str) << "\t.string " << str_ << "\n";
+    *(meta_data->debug_str) << ".LASF" << meta_data->debug_str_count << ":\n";
+    *(meta_data->debug_str) << "\t.string \"" << str_ << "\"\n";
 
     // .debug_info
-    *(meta_data->debug_info) << "\t.long" << ".LASF" << meta_data->debug_str_count << " - "
+    *(meta_data->debug_info) << "\t.long " << ".LASF" << meta_data->debug_str_count << " - "
       << ".Ldebug_str0\n";
     meta_data->debug_info_size += 4;
 
@@ -656,7 +662,7 @@ class FormStrp: public Value {
 
 class FormData1: public Value {
  public:
-  FormData1(uint8_t data) : data_(std::to_string(data)) {}
+  FormData1(uint8_t data) : data_(std::to_string(static_cast<uint32_t>(data))) {}
   FormData1(const std::string &data) : data_(data) {}
 
   auto GetForm() const -> DW_FORM override {
@@ -670,7 +676,8 @@ class FormData1: public Value {
   void Generate(MetaData *meta_data) const override {
     // .debug_abbrev
     *(meta_data->debug_abbrev) << "\t.uleb128 " << static_cast<size_t>(DW_FORM::DW_FORM_data1) << "\n";
-    meta_data->debug_abbrev_size += sizeof(uint128_t);
+    meta_data->debug_abbrev_size +=
+      sizeof_uleb128(static_cast<size_t>(DW_FORM::DW_FORM_data1));
 
     // .debug_info
     *(meta_data->debug_info) << "\t.byte " << data_ << "\n";
@@ -696,8 +703,9 @@ class FormData2: public Value {
 
   void Generate(MetaData *meta_data) const override {
     // .debug_abbrev
-    *(meta_data->debug_abbrev) << "\t.uleb128 " << static_cast<size_t>(DW_FORM::DW_FORM_data1) << "\n";
-    meta_data->debug_abbrev_size += sizeof(uint128_t);
+    size_t form = static_cast<size_t>(DW_FORM::DW_FORM_data2);
+    *(meta_data->debug_abbrev) << "\t.uleb128 " << form << "\n";
+    meta_data->debug_abbrev_size += sizeof_uleb128(form);
 
     // .debug_info
     *(meta_data->debug_info) << "\t.value " << data_ << "\n";
@@ -723,8 +731,9 @@ class FormData4: public Value {
 
   void Generate(MetaData *meta_data) const override {
     // .debug_abbrev
-    *(meta_data->debug_abbrev) << "\t.uleb128 " << static_cast<size_t>(DW_FORM::DW_FORM_data1) << "\n";
-    meta_data->debug_abbrev_size += sizeof(uint128_t);
+    size_t form = static_cast<size_t>(DW_FORM::DW_FORM_data4);
+    *(meta_data->debug_abbrev) << "\t.uleb128 " << form << "\n";
+    meta_data->debug_abbrev_size += sizeof_uleb128(form);
 
     // .debug_info
     *(meta_data->debug_info) << "\t.long " << data_ << "\n";
@@ -750,8 +759,9 @@ class FormData8: public Value {
 
   void Generate(MetaData *meta_data) const override {
     // .debug_abbrev
-    *(meta_data->debug_abbrev) << "\t.uleb128 " << static_cast<size_t>(DW_FORM::DW_FORM_data1) << "\n";
-    meta_data->debug_abbrev_size += sizeof(uint128_t);
+    size_t form = static_cast<size_t>(DW_FORM::DW_FORM_data8);
+    *(meta_data->debug_abbrev) << "\t.uleb128 " << form << "\n";
+    meta_data->debug_abbrev_size += sizeof_uleb128(form);
 
     // .debug_info
     *(meta_data->debug_info) << "\t.quad " << data_ << "\n";
@@ -786,8 +796,9 @@ class FormAddr: public Value {
 
   void Generate(MetaData *metadata) const override {
     // .debug_abbrev
-    (*metadata->debug_abbrev) << "\t.uleb128 " << static_cast<size_t>(DW_FORM::DW_FORM_addr) << "\n";
-    metadata->debug_abbrev_size += sizeof(uint128_t);
+    size_t form = static_cast<size_t>(this->GetForm());
+    *(metadata->debug_abbrev) << "\t.uleb128 " << form << "\n";
+    metadata->debug_abbrev_size += sizeof_uleb128(form);
     // .debug_info
     if (m64_) {
       (*metadata->debug_info) << "\t.quad " << data_ << "\n";
