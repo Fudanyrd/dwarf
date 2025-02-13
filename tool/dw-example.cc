@@ -9,13 +9,60 @@
 // DW_AT_low_pc DW_FORM_addr .Ltext0:
 // DW_AT_high_pc DW_FORM_addr .Letext0:
 
+// This correspond to the following c source code:
+// It should be put at /home/liuyu/hello.c
+/*
+#include <syscall.h>
+void _start() {
+	register long rax asm("rax") = SYS_write;
+	register long rdi asm("rdi") = 1;
+	register long rsi asm("rsi") = "Hello world!\n";
+	register long rdx asm("rdx") = 14;
+	
+	asm volatile("syscall" : "+r"(rax)
+	   : "r"(rax), "r"(rdi), "r"(rsi), "r"(rdx)
+	   : "memory");	
+
+	rax = SYS_exit;	
+	rdi = 0;
+	asm volatile("syscall" : "+r"(rax)
+	   : "r"(rax), "r"(rdi)
+	   : "memory");	
+}
+*/
+
+// And its assembly code without debug info:
+/*
+	.section .text
+.Ltext0:
+	.globl _start
+_start:
+	movq $1, %rax
+	movq $1, %rdi
+	leaq .LC0, %rsi
+	movq $14, %rdx
+	syscall
+	
+	movq $60, %rax
+	movq $0, %rdi
+	syscall
+.Letext0:
+	.section .data
+.LC0:
+	.string "Hello world!\n"
+*/
+
 #include <src/dwarf.h>
 #include <iostream>
+#include <unistd.h>
+#include <cstring>
+#include <fcntl.h>
 
 using Dwarf::DebugInfo;
 using Dwarf::DebugInfoEntry;
 using Dwarf::Attribute;
 using Dwarf::DW_AT;
+using Dwarf::DW_ATE;
 using Dwarf::DW_TAG;
 using Dwarf::DW_FORM;
 using Dwarf::FormAddr;
@@ -24,6 +71,7 @@ using Dwarf::FormData2;
 using Dwarf::FormData4;
 using Dwarf::FormData8;
 using Dwarf::FormString;
+using Dwarf::FormStrp;
 
 int main(int argc, char **argv) {
   // get system endianess and pointer size.
@@ -39,14 +87,18 @@ int main(int argc, char **argv) {
   DebugInfoEntry comp_unit;
   comp_unit
     .SetTag(DW_TAG::DW_TAG_compile_unit)
-    .SetChildren(false)
+    .SetChildren(true)
     .AddAttribute({
       DW_AT::DW_AT_name, 
-      std::make_shared<FormString>(__FILE__)
+      std::make_shared<FormStrp>("hello.c")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_comp_dir,
+      std::make_shared<FormStrp>("/home/liuyu")
     })
     .AddAttribute({
       DW_AT::DW_AT_producer, 
-      std::make_shared<FormString>("g++ (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3")
+      std::make_shared<FormStrp>("g++ (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3")
     })
     .AddAttribute({
       DW_AT::DW_AT_language, 
@@ -61,9 +113,92 @@ int main(int argc, char **argv) {
       std::make_shared<FormAddr>(".Letext0", m64)
     });
   
+  DebugInfoEntry func_start;
+  func_start
+    .SetChildren(false)
+    .SetTag(DW_TAG::DW_TAG_subprogram)
+    .AddAttribute({
+      DW_AT::DW_AT_name,
+      std::make_shared<FormStrp>("_start")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_low_pc,
+      std::make_shared<FormAddr>("_start", m64)
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_high_pc,
+      std::make_shared<FormAddr>(".Letext0", m64)
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_decl_file,
+      std::make_shared<FormStrp>("hello.c")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_decl_line,
+      std::make_shared<FormData2>("2")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_external,
+      std::make_shared<FormData1>("1")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_decl_column,
+      std::make_shared<FormData1>("0")
+    });
+    
+  // Add a signed integer type named "long".
+  DebugInfoEntry type_long;
+  type_long
+    .SetTag(DW_TAG::DW_TAG_base_type)
+    .SetChildren(false)
+    .AddAttribute({
+      DW_AT::DW_AT_name,
+      std::make_shared<FormStrp>("long")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_encoding,
+      std::make_shared<FormData1>(static_cast<uint8_t>(DW_ATE::DW_ATE_signed))
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_byte_size,
+      std::make_shared<FormData1>("8")
+    });
+  
+  // Add an unsigned integer type size_t
+  DebugInfoEntry type_size_t;
+  type_size_t
+    .SetTag(DW_TAG::DW_TAG_base_type)
+    .SetChildren(false)
+    .AddAttribute({
+      DW_AT::DW_AT_name,
+      std::make_shared<FormStrp>("size_t")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_encoding,
+      std::make_shared<FormData1>(static_cast<uint8_t>(DW_ATE::DW_ATE_unsigned))
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_byte_size,
+      std::make_shared<FormData1>("16")
+    });
+
+  // The debug info entries are organized in a tree structure.
+  func_start
+    .AddAttribute({
+      DW_AT::DW_AT_sibling,
+      std::make_shared<FormAddr>(type_long.GetLabel(), m64)
+    });
+  type_long
+    .AddAttribute({
+      DW_AT::DW_AT_sibling,
+      std::make_shared<FormAddr>(type_size_t.GetLabel(), m64)
+    });
 
   DebugInfo info(m64, little);
   info.AddEntry(comp_unit);
+  info.AddEntry(func_start);
+  info.AddEntry(type_long);
+  info.AddEntry(type_size_t);
   info.Generate(std::cout);
   return 0;
 }
