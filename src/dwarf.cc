@@ -61,7 +61,7 @@ std::ostream &DebugInfo::Generate(std::ostream &os) const {
   debug_lines << ".Ldebug_lines0:\n";
 
   std::ostringstream debug_str;
-  debug_str << "\t.section .debug_str,\"MS\",@progbits,1\n";
+  debug_str << "\t.section .debug_str\n";
   debug_str << ".Ldebug_str0:\n";
 
   static struct CompilationUnitHeader unit_header;
