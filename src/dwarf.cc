@@ -6,6 +6,8 @@
 
 namespace Dwarf {
 
+size_t DebugInfoEntry::instances_ = 0;
+
 static bool IsWhite(char ch) {
   return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r';
 }
@@ -77,6 +79,7 @@ std::ostream &DebugInfo::Generate(std::ostream &os) const {
 
   for (const auto &entry : this->entries_) {
     // abbrev code
+    debug_info << entry.GetLabel() << ":\n";
     debug_info << "\t.uleb128 " << abbrev_code << "\n";
     meta_data.debug_info_size += sizeof_uleb128(abbrev_code);
     debug_abbrev << "\t.uleb128 " << abbrev_code << "\n";

@@ -835,6 +835,17 @@ struct DebugInfoEntry {
   bool children_;
   std::vector<Attribute> attributes_;
 
+  DebugInfoEntry() {
+    this->label_  = DebugInfoEntry::instances_++;
+  }
+
+  auto GetIndex() const -> size_t { return this->label_; }
+  auto GetLabel() const -> std::string {
+    std::ostringstream os;
+    os << ".Ldebug_entry" << this->label_;
+    return os.str();
+  }
+
   auto SetTag(DW_TAG tag) -> DebugInfoEntry & {
     tag_ = tag;
     return *this;
@@ -855,6 +866,9 @@ struct DebugInfoEntry {
     attributes_.push_back(attr);
     return *this;
   }
+ private:
+  size_t label_;
+  static size_t instances_;
 };
 
 class DebugInfo {
