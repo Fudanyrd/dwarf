@@ -101,8 +101,11 @@ std::ostream &DebugInfo::Generate(std::ostream &os) const {
 
     for (const auto &attr : entry.attributes_) {
       assert(attr.attr_value != nullptr);
-      debug_abbrev << "\t.uleb128 " << static_cast<size_t>(attr.attr_name) << "\n";
-      meta_data.debug_abbrev_size += sizeof_uleb128(static_cast<size_t>(attr.attr_name));
+      auto name = attr.attr_name;
+      if (name != DW_AT::DW_AT_reserved) {
+        debug_abbrev << "\t.uleb128 " << static_cast<size_t>(name) << "\n";
+        meta_data.debug_abbrev_size += sizeof_uleb128(static_cast<size_t>(name));
+      }
       attr.attr_value->Generate(&meta_data);
     }
     

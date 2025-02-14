@@ -107,6 +107,7 @@ enum class DW_TAG {
 // Page [155-159]: Dwarf Attribute Types
 enum class DW_AT {
   // attribute encodings
+  DW_AT_reserved = 0x0,
   DW_AT_sibling = 0x1,
   DW_AT_location = 0x2,
   DW_AT_name = 0x3,
@@ -566,8 +567,13 @@ class Value {
 
   // dump debug info as assembly code
   virtual void Generate(MetaData *meta_data) const {
-    // not implemented
-    throw std::runtime_error("Not implemented");
+    size_t form = static_cast<size_t>(this->GetForm());
+    // .debug_info
+    // .uleb128 form
+    *(meta_data->debug_info) << "\t.uleb128 " << form << "\n";
+    meta_data->debug_info_size += sizeof_uleb128(form);
+
+    // .debug_abbrev
   }
 
   // dump debug info in json format.
@@ -576,6 +582,8 @@ class Value {
     throw std::runtime_error("Not implemented");
   }
 };
+
+using FormReserved = Value;
 
 // Manual Page 150
 /*

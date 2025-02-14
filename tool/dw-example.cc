@@ -74,8 +74,10 @@ using Dwarf::FormData4;
 using Dwarf::FormData8;
 using Dwarf::FormExprLoc;
 using Dwarf::FormRefAddr;
+using Dwarf::FormReserved;
 using Dwarf::FormString;
 using Dwarf::FormStrp;
+using Dwarf::Value;
 
 int main(int argc, char **argv) {
   // get system endianess and pointer size.
@@ -229,12 +231,20 @@ int main(int argc, char **argv) {
   func_start
     .AddAttribute({
       DW_AT::DW_AT_sibling,
-      std::make_shared<FormAddr>(type_long.GetLabel(), m64)
+      std::make_shared<FormRefAddr>(type_long.GetLabel())
     });
   type_long
     .AddAttribute({
       DW_AT::DW_AT_sibling,
-      std::make_shared<FormAddr>(type_size_t.GetLabel(), m64)
+      std::make_shared<FormRefAddr>(type_size_t.GetLabel())
+    });
+  
+  // the parent of var_rax is func_start.
+  // and there is no more children of func_start.
+  var_rax
+    .AddAttribute({
+      DW_AT::DW_AT_reserved,
+      std::make_shared<FormReserved>()
     });
 
   DebugInfo info(m64, little);
