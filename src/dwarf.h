@@ -616,6 +616,120 @@ class FormString: public Value {
   std::string str_;
 };
 
+struct DwarfOperation {
+ public:
+  std::string operands_[2];
+  size_t num_operand_;
+  DW_OP opcode_{DW_OP::DW_OP_breg0};
+
+  DwarfOperation(DW_OP opcode): num_operand_(0),
+    opcode_(opcode) {}
+  DwarfOperation(DW_OP opcode, const std::string &operand):
+    num_operand_(1), opcode_(opcode) {
+    this->operands_[0] = operand;
+  }
+
+  DwarfOperation(DW_OP opcode, const std::string &operand1, const std::string &operand2):
+    num_operand_(2), opcode_(opcode) {
+    this->operands_[0] = operand1;
+    this->operands_[1] = operand2;
+  }
+
+  auto GetSize() const -> size_t {
+    // .byte opcode
+    size_t size = 1;
+    if (num_operand_) {
+      // FIXME: Implement operand size calculation
+      // when multiple operands.
+      throw std::runtime_error("Not implemented");
+    }
+    return size;
+  }
+
+  void Generate(MetaData *metadata) const {
+    if (num_operand_) {
+      throw std::runtime_error("Not implemented");
+    }
+    // .debug_info 
+    // .byte opcode
+    *(metadata->debug_info) << "\t.byte " << static_cast<size_t>(opcode_) << "\n";
+    metadata->debug_info_size += 1;
+  }
+};
+
+// [Page 148]
+// This is an unsigned LEB128 length followed by 
+// the number of information bytes specified by 
+// the length (DW_FORM_exprloc). The information 
+// bytes contain a DWARF expression (see 
+// Section 2.5) or location description (see Section 2.6).
+class FormExprLoc: public Value {
+ public:
+  FormExprLoc() = default;
+  FormExprLoc(const std::vector<DwarfOperation> &operations): operations_(operations) {}
+
+  auto GetForm() const -> DW_FORM override {
+    return DW_FORM::DW_FORM_exprloc;
+  }
+
+  auto ToString() const -> std::string override {
+    // FIXME: FormExprLoc convertion to string.
+    return "";
+  }
+
+  void Generate(MetaData *meta_data) const override {
+    // A DWARF expression is stored in a block of contiguous bytes. 
+    // The bytes form a sequence of operations. Each 
+    // operation is a 1-byte code that identifies that operation, 
+    // followed by zero or more bytes of additional data. 
+
+    size_t length = 0;
+    for (const auto &op : this->operations_) {
+      length += op.GetSize();
+    }
+    
+    // .debug_info 
+    // .uleb128 length
+    *(meta_data->debug_info) << "\t.uleb128 " << length << "\n";
+    meta_data->debug_info_size += sizeof_uleb128(length);
+
+    // .debug_abbrev
+    size_t form = static_cast<size_t>(DW_FORM::DW_FORM_exprloc);
+    *(meta_data->debug_abbrev) << "\t.uleb128 " << form << "\n";
+    meta_data-> debug_abbrev_size += sizeof_uleb128(form);
+
+    for (const auto &op : this->operations_) {
+      op.Generate(meta_data);
+    }
+  }
+
+ private:
+  std::vector<DwarfOperation> operations_;
+};
+
+class FormRefAddr: public Value {
+ public:
+  FormRefAddr(const std::string &ref) : ref_(ref) {}
+
+  auto GetForm() const -> DW_FORM override {
+    return DW_FORM::DW_FORM_ref_addr;
+  }
+
+  void Generate(MetaData *meta_data) const override {
+    // .debug_abbrev 
+    size_t form = static_cast<size_t>(DW_FORM::DW_FORM_ref_addr);
+    *(meta_data->debug_abbrev) << "\t.uleb128 " << form << "\n";
+    meta_data->debug_abbrev_size += sizeof_uleb128(form);
+
+    // .debug_info
+    *(meta_data->debug_info) << "\t.long " << ref_ << " - .Ldebug_info0\n";
+    meta_data->debug_info_size += sizeof(uint32_t);
+  }
+
+ private:
+  std::string ref_;
+};
+
 class FormStrp: public Value {
  public:
   FormStrp(const std::string &str) : str_(str) {}

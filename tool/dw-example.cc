@@ -60,16 +60,20 @@ _start:
 
 using Dwarf::DebugInfo;
 using Dwarf::DebugInfoEntry;
+using Dwarf::DwarfOperation;
 using Dwarf::Attribute;
 using Dwarf::DW_AT;
 using Dwarf::DW_ATE;
 using Dwarf::DW_TAG;
 using Dwarf::DW_FORM;
+using Dwarf::DW_OP;
 using Dwarf::FormAddr;
 using Dwarf::FormData1;
 using Dwarf::FormData2;
 using Dwarf::FormData4;
 using Dwarf::FormData8;
+using Dwarf::FormExprLoc;
+using Dwarf::FormRefAddr;
 using Dwarf::FormString;
 using Dwarf::FormStrp;
 
@@ -115,7 +119,7 @@ int main(int argc, char **argv) {
   
   DebugInfoEntry func_start;
   func_start
-    .SetChildren(false)
+    .SetChildren(true)
     .SetTag(DW_TAG::DW_TAG_subprogram)
     .AddAttribute({
       DW_AT::DW_AT_name,
@@ -181,6 +185,45 @@ int main(int argc, char **argv) {
       DW_AT::DW_AT_byte_size,
       std::make_shared<FormData1>("16")
     });
+  
+  // add entry for variables.
+  DebugInfoEntry var_rax;
+  std::vector<DwarfOperation> expr = {
+    DwarfOperation(DW_OP::DW_OP_reg0), // in register rax.
+  };
+  var_rax 
+    .SetChildren(false)
+    .SetTag(DW_TAG::DW_TAG_variable)
+    .AddAttribute({
+      DW_AT::DW_AT_name, 
+      std::make_shared<FormStrp>("rax")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_decl_file,
+      std::make_shared<FormStrp>("hello.c")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_decl_line,
+      std::make_shared<FormData1>("3")
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_type,
+      std::make_shared<FormRefAddr>(type_long.GetLabel())
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_location,
+      std::make_shared<FormExprLoc>(expr)
+    });
+  
+
+  // FIXME:
+  // Adding other variables: rdi, rsi, rdx
+  // will be left for you as an exercise.
+  // Hint: $rdi -> DW_OP_reg5,
+  // $rsi -> DW_OP_reg4, 
+  // $rdx -> DW_OP_reg1
+
+
 
   // The debug info entries are organized in a tree structure.
   func_start
@@ -197,6 +240,7 @@ int main(int argc, char **argv) {
   DebugInfo info(m64, little);
   info.AddEntry(comp_unit);
   info.AddEntry(func_start);
+  info.AddEntry(var_rax);
   info.AddEntry(type_long);
   info.AddEntry(type_size_t);
   info.Generate(std::cout);
