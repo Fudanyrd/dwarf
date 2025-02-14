@@ -77,7 +77,8 @@ std::ostream &DebugInfo::Generate(std::ostream &os) const {
 
   size_t abbrev_code = 1;
 
-  for (const auto &entry : this->entries_) {
+  for (auto *entry_ptr : this->entries_) {
+    auto &entry = *entry_ptr;
     // abbrev code
     debug_info << entry.GetLabel() << ":\n";
     debug_info << "\t.uleb128 " << abbrev_code << "\n";

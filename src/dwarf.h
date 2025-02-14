@@ -997,7 +997,7 @@ class DebugInfo {
  public:
   DebugInfo(bool m64, bool little_endian) : m64_(m64), little_endian_(little_endian) {}
 
-  auto GetEntries() -> std::vector<DebugInfoEntry> & {
+  auto GetEntries() -> std::vector<DebugInfoEntry *> & {
     return entries_;
   }
 
@@ -1005,7 +1005,7 @@ class DebugInfo {
     return m64_ ? 8 : 4;
   }
 
-  auto AddEntry(DebugInfoEntry entry) -> DebugInfo & {
+  auto AddEntry(DebugInfoEntry *entry) -> DebugInfo & {
     entries_.push_back(entry);
     return *this;
   }
@@ -1015,7 +1015,74 @@ class DebugInfo {
  private:
   bool m64_; 
   bool little_endian_;
-  std::vector<DebugInfoEntry> entries_;
+  std::vector<DebugInfoEntry *> entries_;
+};
+
+// Use a tree to manage debug info entry.
+
+struct DIETreeNode {
+ public:
+  // FIXME: consider using a shared_ptr
+  DebugInfoEntry *entry_{nullptr};
+  std::vector<std::shared_ptr<DIETreeNode>> children_;
+
+  auto HasChildren() const -> bool {
+    return !children_.empty();
+  }
+
+  auto AddChild(std::shared_ptr<DIETreeNode> child) -> DIETreeNode & {
+    children_.push_back(child);
+    return *this;
+  }
+
+  // 'flatten' the tree structure so that DebugInfo can generate
+  void PrepareForGeneration(DebugInfo *debug_info) const {
+    assert(this->entry_ != nullptr);
+    assert(debug_info != nullptr);
+
+    if (this->HasChildren()) {
+      this->entry_->SetChildren(true);
+      debug_info->AddEntry(this->entry_);
+      
+      DIETreeNode *last = nullptr;
+      for (const auto &child : children_) {
+        child->PrepareForGeneration(debug_info);
+        last = child.get();
+      }
+      last->entry_->AddAttribute({
+        DW_AT::DW_AT_reserved,
+        std::make_shared<FormReserved>()
+      });
+    } else {
+      debug_info->AddEntry(this->entry_);
+    }
+  }
+};
+
+class DIETree {
+ public:
+  DIETree(bool m64, bool little_endian) : debug_info_(m64, little_endian) {}
+
+  auto SetRoot(std::shared_ptr<DIETreeNode> root) -> DIETree & {
+    assert(root != nullptr);
+    root_ = root;
+    root_->PrepareForGeneration(&debug_info_);
+    return *this;
+  }
+
+  // disallow copy and move 
+  DIETree(const DIETree &) = delete;
+  DIETree(DIETree &&) = delete;
+
+  auto Generate(std::ostream &os) const -> std::ostream & {
+    debug_info_.Generate(os);
+    return os;
+  }
+
+ private:
+  std::shared_ptr<DIETreeNode> root_;
+  // used during generation
+  DebugInfo debug_info_;
 };
 
 } // namespace Dwarf
