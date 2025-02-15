@@ -903,6 +903,34 @@ class FormData8: public Value {
   std::string data_;
 };
 
+class FormSecOffset: public Value {
+ public:
+  FormSecOffset(uint32_t offset) : offset_(std::to_string(offset)) {}
+  FormSecOffset(const std::string &offset) : offset_(offset) {}
+
+  auto GetForm() const -> DW_FORM override {
+    return DW_FORM::DW_FORM_sec_offset;
+  }
+
+  auto ToString() const -> std::string override {
+    return offset_;
+  }
+
+  void Generate(MetaData *meta_data) const override {
+    // .debug_abbrev
+    size_t form = static_cast<size_t>(DW_FORM::DW_FORM_sec_offset);
+    *(meta_data->debug_abbrev) << "\t.uleb128 " << form << "\n";
+    meta_data->debug_abbrev_size += sizeof_uleb128(form);
+
+    // .debug_info
+    *(meta_data->debug_info) << "\t.long " << offset_ << "\n";
+    meta_data->debug_info_size += sizeof(uint32_t);
+  }
+
+ private:
+  std::string offset_;
+};
+
 class FormAddr: public Value {
  public:
   FormAddr(uint64_t addr, bool m64) : data_(std::to_string(addr)), m64_(m64) {}
@@ -1006,6 +1034,7 @@ class DebugInfo {
   }
 
   auto AddEntry(DebugInfoEntry *entry) -> DebugInfo & {
+    assert(entry != nullptr);
     entries_.push_back(entry);
     return *this;
   }

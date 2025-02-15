@@ -85,6 +85,7 @@ using Dwarf::FormData8;
 using Dwarf::FormExprLoc;
 using Dwarf::FormRefAddr;
 using Dwarf::FormReserved;
+using Dwarf::FormSecOffset;
 using Dwarf::FormString;
 using Dwarf::FormStrp;
 using Dwarf::Value;
@@ -135,7 +136,7 @@ int main(int argc, char **argv) {
     })
     .AddAttribute({
       DW_AT::DW_AT_stmt_list,
-      std::make_shared<FormData4>("0")
+      std::make_shared<FormSecOffset>("0")
     });
   
   DebugInfoEntry func_start;
