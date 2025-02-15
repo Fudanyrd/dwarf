@@ -32,24 +32,34 @@ void _start() {
 */
 
 // And its assembly code without debug info:
+// The line number are kept for reference.
 /*
 	.section .text
 .Ltext0:
 	.globl _start
 _start:
+  .file 1 "hello.c"
+  .loc 1 3 4
 	movq $1, %rax
+  .loc 1 4 4
 	movq $1, %rdi
+  .loc 1 5 4
 	leaq .LC0, %rsi
+  .loc 1 6 4
 	movq $14, %rdx
+  .loc 1 8 4
 	syscall
-	
+  .loc 1 12 4
 	movq $60, %rax
+  .loc 1 13 4
 	movq $0, %rdi
-	syscall
+  .loc 1 14 4
+  syscall
+  .loc 1 17 4
 .Letext0:
-	.section .data
+  .section .data
 .LC0:
-	.string "Hello world!\n"
+  .string "Hello world!\n"
 */
 
 #include <src/dwarf.h>
@@ -122,6 +132,10 @@ int main(int argc, char **argv) {
     .AddAttribute({
       DW_AT::DW_AT_high_pc, 
       std::make_shared<FormAddr>(".Letext0", m64)
+    })
+    .AddAttribute({
+      DW_AT::DW_AT_stmt_list,
+      std::make_shared<FormData4>("0")
     });
   
   DebugInfoEntry func_start;
