@@ -26,6 +26,7 @@ auto Split(const std::string &str) -> std::vector<std::string>;
 // [Page 161]
 // returns the size of an uleb128 in bytes.
 extern size_t sizeof_uleb128(size_t value);
+extern size_t sizeof_sleb128(long value);
 
 static const char *author = "Fudanyrd:" __FILE__;
 static const char *date = __DATE__ ", " __TIME__;
@@ -631,37 +632,65 @@ struct DwarfOperation {
   DW_OP opcode_{DW_OP::DW_OP_breg0};
 
   DwarfOperation(DW_OP opcode): num_operand_(0),
-    opcode_(opcode) {}
+    opcode_(opcode) {
+    this->ComputeSize();
+    assert(this->size_ == 1);
+  }
   DwarfOperation(DW_OP opcode, const std::string &operand):
     num_operand_(1), opcode_(opcode) {
     this->operands_[0] = operand;
+    this->ComputeSize();
   }
 
   DwarfOperation(DW_OP opcode, const std::string &operand1, const std::string &operand2):
     num_operand_(2), opcode_(opcode) {
     this->operands_[0] = operand1;
     this->operands_[1] = operand2;
+    this->ComputeSize();
   }
 
   auto GetSize() const -> size_t {
     // .byte opcode
-    size_t size = 1;
-    if (num_operand_) {
-      // FIXME: Implement operand size calculation
-      // when multiple operands.
-      throw std::runtime_error("Not implemented");
-    }
-    return size;
+    // (other operands)
+    return this->size_;
+  }
+
+  // Manually set pointer size to 64-bit or 32-bit.
+  // Default to 64-bit.
+  auto SetM64(bool m64) -> DwarfOperation & {
+    this->m64_ = m64;
+    return *this;
   }
 
   void Generate(MetaData *metadata) const {
     if (num_operand_) {
+      // FIXME: add impl
       throw std::runtime_error("Not implemented");
     }
     // .debug_info 
     // .byte opcode
     *(metadata->debug_info) << "\t.byte " << static_cast<size_t>(opcode_) << "\n";
     metadata->debug_info_size += 1;
+  }
+
+  // Should be called after one of opcode_, 
+  // operands_[0], operands_[1] is set.
+  void ComputeSize();
+
+ private:
+  size_t size_;
+  bool m64_{true};
+
+  static auto ToSizeType(const std::string &str) -> size_t {
+    size_t size = 0;
+    sscanf(str.c_str(), "%lu", &size);
+    return size;
+  }
+
+  static auto ToLong(const std::string &str) -> long {
+    long ret = 0;
+    sscanf(str.c_str(), "%ld", &ret);
+    return ret;
   }
 };
 
