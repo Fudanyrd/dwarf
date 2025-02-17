@@ -662,16 +662,7 @@ struct DwarfOperation {
     return *this;
   }
 
-  void Generate(MetaData *metadata) const {
-    if (num_operand_) {
-      // FIXME: add impl
-      throw std::runtime_error("Not implemented");
-    }
-    // .debug_info 
-    // .byte opcode
-    *(metadata->debug_info) << "\t.byte " << static_cast<size_t>(opcode_) << "\n";
-    metadata->debug_info_size += 1;
-  }
+  void Generate(MetaData *metadata) const; 
 
   // Should be called after one of opcode_, 
   // operands_[0], operands_[1] is set.

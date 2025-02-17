@@ -303,4 +303,158 @@ void DwarfOperation::ComputeSize() {
   }
 }
 
+void DwarfOperation::Generate(MetaData *meta_data) const {
+  // .debug_info 
+  // .byte opcode
+  *(meta_data->debug_info) << "\t.byte " << static_cast<size_t>(opcode_) << "\n";
+  meta_data->debug_info_size += 1;
+
+  if (this->num_operand_ == 0) {
+    return;
+  }
+
+  if (this->num_operand_ == 1) {
+    switch(this->opcode_) {
+    case (DW_OP::DW_OP_addr): {
+      (meta_data->debug_info_size) += this->m64_ ? 8 : 4;
+      if (this->m64_) {
+        *(meta_data->debug_info) << "\t.quad " << this->operands_[0] << "\n";
+      } else {
+        *(meta_data->debug_info) << "\t.long " << this->operands_[0] << "\n";
+      }
+      break;
+    }
+    case (DW_OP::DW_OP_const1u):
+    case (DW_OP::DW_OP_pick):
+    case(DW_OP::DW_OP_const1s): {
+      (meta_data->debug_info_size) += 1;
+      *(meta_data->debug_info) << "\t.byte " << this->operands_[0] << "\n";
+      break;
+    }
+    case (DW_OP::DW_OP_call2):
+    case (DW_OP::DW_OP_const2u):
+    case (DW_OP::DW_OP_skip):
+    case (DW_OP::DW_OP_bra):
+    case (DW_OP::DW_OP_const2s): {
+      (meta_data->debug_info_size) += 2;
+      *(meta_data->debug_info) << "\t.short " << this->operands_[0] << "\n";
+      break;
+    }
+    case (DW_OP::DW_OP_call4):
+    case (DW_OP::DW_OP_call_ref):
+    case (DW_OP::DW_OP_const4u):
+    case (DW_OP::DW_OP_const4s): {
+      (meta_data->debug_info_size) += 4;
+      *(meta_data->debug_info) << "\t.long " << this->operands_[0] << "\n";
+      break;
+    }
+    case (DW_OP::DW_OP_const8u):
+    case (DW_OP::DW_OP_const8s): {
+      (meta_data->debug_info_size) += 8;
+      *(meta_data->debug_info) << "\t.quad " << this->operands_[0] << "\n";
+      break;
+    }
+    case (DW_OP::DW_OP_plus_uconst):
+    case (DW_OP::DW_OP_constu): {
+      size_t operand = ToSizeType(this->operands_[0]);
+      (meta_data->debug_info_size) += sizeof_uleb128(operand);
+      *(meta_data->debug_info) << "\t.uleb128 " << this->operands_[0] << "\n";
+      break;
+    }
+    case (DW_OP::DW_OP_breg0):
+    case (DW_OP::DW_OP_breg1):
+    case (DW_OP::DW_OP_breg2):
+    case (DW_OP::DW_OP_breg3):
+    case (DW_OP::DW_OP_breg4):
+    case (DW_OP::DW_OP_breg5):
+    case (DW_OP::DW_OP_breg6):
+    case (DW_OP::DW_OP_breg7):
+    case (DW_OP::DW_OP_breg8):
+    case (DW_OP::DW_OP_breg9):
+    case (DW_OP::DW_OP_breg10):
+    case (DW_OP::DW_OP_breg11):
+    case (DW_OP::DW_OP_breg12):
+    case (DW_OP::DW_OP_breg13):
+    case (DW_OP::DW_OP_breg14):
+    case (DW_OP::DW_OP_breg15):
+    case (DW_OP::DW_OP_breg16):
+    case (DW_OP::DW_OP_breg17):
+    case (DW_OP::DW_OP_breg18):
+    case (DW_OP::DW_OP_breg19):
+    case (DW_OP::DW_OP_breg20):
+    case (DW_OP::DW_OP_breg21):
+    case (DW_OP::DW_OP_breg22):
+    case (DW_OP::DW_OP_breg23):
+    case (DW_OP::DW_OP_breg24):
+    case (DW_OP::DW_OP_breg25):
+    case (DW_OP::DW_OP_breg26):
+    case (DW_OP::DW_OP_breg27):
+    case (DW_OP::DW_OP_breg28):
+    case (DW_OP::DW_OP_breg29):
+    case (DW_OP::DW_OP_breg30):
+    case (DW_OP::DW_OP_breg31):
+    case (DW_OP::DW_OP_fbreg):
+    case (DW_OP::DW_OP_consts): {
+      long operand = ToLong(this->operands_[0]);
+      (meta_data->debug_info_size) += sizeof_sleb128(operand);
+      *(meta_data->debug_info) << "\t.sleb128 " << this->operands_[0] << "\n";
+      break;
+    }
+
+    default: {
+      std::cerr << "Note: opcode " << static_cast<size_t>(this->opcode_) << std::endl;
+      std::cerr << "This is a bug. Please report it." << std::endl;
+      throw std::runtime_error("Number of operands(1) is not compatible with opcode");
+    }
+    }
+  } else if (this->num_operand_ == 2) {
+    switch (this->opcode_) {
+    case (DW_OP::DW_OP_bregx): {
+      // first is uleb128, second is sleb128
+      size_t operand1 = ToSizeType(this->operands_[0]);
+      long operand2 = ToLong(this->operands_[1]);
+      (meta_data->debug_info_size) += sizeof_uleb128(operand1) + sizeof_sleb128(operand2);
+      // .uleb128 operand1
+      *(meta_data->debug_info) << "\t.uleb128 " << operand1 << "\n";
+      // .sleb128 operand2
+      *(meta_data->debug_info) << "\t.sleb128 " << operand2 << "\n";
+      break;
+    }
+    case (DW_OP::DW_OP_bit_piece): {
+      // first is uleb128, second is uleb128
+      size_t operand1 = ToSizeType(this->operands_[0]);
+      size_t operand2 = ToSizeType(this->operands_[1]);
+      (meta_data->debug_info_size) += sizeof_uleb128(operand1) + sizeof_uleb128(operand2);
+      // .uleb128 operand1
+      *(meta_data->debug_info) << "\t.uleb128 " << operand1 << "\n";
+      // .uleb128 operand2
+      *(meta_data->debug_info) << "\t.uleb128 " << operand2 << "\n";
+      break;
+    }
+    case (DW_OP::DW_OP_implicit_value): {
+      // ULEB128 size followed by block of that size
+      size_t operand1 = ToSizeType(this->operands_[0]);
+      (meta_data->debug_info_size) += sizeof_uleb128(operand1) /* sizeof uleb128 */
+      + operand1 /* size of the block */;
+      // .uleb128 operand1
+      *(meta_data->debug_info) << "\t.uleb128 " << operand1 << "\n";
+      // .byte block
+      for (const auto &ch : this->operands_[1]) {
+        *(meta_data->debug_info) << "\t.byte " << static_cast<size_t>(ch) << "\n";
+      }
+      break;
+    }
+    default: {
+      std::cerr << "Note: opcode " << static_cast<size_t>(this->opcode_) << std::endl;
+      std::cerr << "This is a bug. Please report it." << std::endl;
+      throw std::runtime_error("Number of operands(2) is not compatible with opcode");
+    }
+    }
+  } else {
+    std::cerr << "Note: opcode " << static_cast<size_t>(this->opcode_) << std::endl;
+    std::cerr << "This is a bug. Please report it." << std::endl;
+    throw std::runtime_error("Number of operands(>=3) is not compatible with opcode");
+  }
+}
+
 } // namespace Dwarf
