@@ -105,6 +105,13 @@ enum class DW_TAG {
 // Page [154] Dwarf Children encodings
 #define DW_CHILDREN_no (0x0)
 
+/*
+enum class DW_CHILDREN {
+  DW_CHILDREN_no = 0x0,
+  DW_CHILDREN_yes = 0x01
+};
+*/
+
 // Page [155-159]: Dwarf Attribute Types
 enum class DW_AT {
   // attribute encodings
@@ -394,6 +401,9 @@ enum class DW_OP {
   DW_OP_lo_user = 0xe0,
   DW_OP_hi_user = 0xff
 };
+
+// Map register name to dwarf register number.
+auto RegNameToNum(const std::string &reg) -> DW_OP;
 
 // Page [168-169] Dwarf Basic Type Encoding
 // used by DW_AT_encoding
