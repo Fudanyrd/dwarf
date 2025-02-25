@@ -22,6 +22,7 @@ namespace Lex {
 enum class TokenLabel {
   TNULL = 0, // comments, whitespaces, etc.
   TALPHA, // isalpha or isdigit
+  TDIGIT, // is digit
   TQUOTE, // single quote, '
   TDOUBLEQUOTE, // double quote, "
   TLEFTBRACKET, // {
@@ -52,16 +53,34 @@ enum class TokenLabel {
   TASSIGN, // =
   TNOT, // !
   TCOMMA, // ,
+  TQUESTION, // ?
+  TCOLON, // :
+  TSHARP, // #
   // supported types: bool, int, char, void
   TBOOL,
   TINT,
   TCHAR,
   TVOID,
+  TLONG,
+  TSIGNED,
+  TUNSIGNED,
+  TSHORT,
   // supported control flow keywords: if, else, while, return
   TIF,
   TELSE,
   TWHILE,
   TRETURN,
+  TFOR,
+  TDO,
+  TSWITCH,
+  TCASE,
+  TDEFAULT,
+  TBREAK,
+  TCONTINUE,
+  // struct, union, enum
+  TSTRUCT,
+  TUNION,
+  TENUM,
 };
 
 const char *GetNameOfLabel(TokenLabel label);
@@ -469,5 +488,9 @@ class X86Generator : public CodeGenerator {
 };
 
 } // namespace Generator
+
+namespace BugInsertor {
+
+} // namespace BugInsertor
 
 #endif // __LEX_H__

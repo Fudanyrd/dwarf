@@ -15,6 +15,7 @@ static uint32_t lno = 0;
 static const char *token_names[] = {
   "null",
   "alpha",
+  "digit",
   "quote",
   "double quote",
   "left bracket",
@@ -45,16 +46,35 @@ static const char *token_names[] = {
   "assign",
   "not",
   "comma",
+  "question",
+  "colon",
+  "sharp",
   // supported types: bool, int, char, void
   "bool",
   "int",
   "char",
   "void",
+  "long",
+  "signed",
+  "unsigned",
+  "short",
   // supported control flow keywords: if, else, while, return
+  // , for, do, case, break, continue
   "if",
   "else",
   "while",
   "return",
+  "for",
+  "do",
+  "switch",
+  "case",
+  "default",
+  "break",
+  "continue",
+  // struct, union, enum
+  "struct",
+  "union",
+  "enum"
 };
 
 const char *GetNameOfLabel(TokenLabel label) {
@@ -83,6 +103,15 @@ static TokenLabel GetLabelOfChar(char ch) {
   }
   case ('}'): {
     return TokenLabel::TRIGHTBRACKET;
+  }
+  case (':'): {
+    return TokenLabel::TCOLON;
+  }
+  case ('?'): {
+    return TokenLabel::TQUESTION;
+  }
+  case ('#'): {
+    return TokenLabel::TSHARP;
   }
 
   default: break;
@@ -296,8 +325,52 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
         tmp.push_back(Token(t.buf, TokenLabel::TRETURN, t.line));
         matched = true;
       }
+      if (t.buf == "for") {
+        tmp.push_back(Token(t.buf, TokenLabel::TFOR, t.line));
+        matched = true;
+      }
+      if (t.buf == "do") {
+        tmp.push_back(Token(t.buf, TokenLabel::TDO, t.line));
+        matched = true;
+      }
+      if (t.buf == "switch") {
+        tmp.push_back(Token(t.buf, TokenLabel::TSWITCH, t.line));
+        matched = true;
+      }
+      if (t.buf == "case") {
+        tmp.push_back(Token(t.buf, TokenLabel::TCASE, t.line));
+        matched = true;
+      }
+      if (t.buf == "default") {
+        tmp.push_back(Token(t.buf, TokenLabel::TDEFAULT, t.line));
+        matched = true;
+      }
+      if (t.buf == "break") {
+        tmp.push_back(Token(t.buf, TokenLabel::TBREAK, t.line));
+        matched = true;
+      }
+      if (t.buf == "continue") {
+        tmp.push_back(Token(t.buf, TokenLabel::TCONTINUE, t.line));
+        matched = true;
+      }
       if (t.buf == "void") {
         tmp.push_back(Token(t.buf, TokenLabel::TVOID, t.line));
+        matched = true;
+      }
+      if (t.buf == "long") {
+        tmp.push_back(Token(t.buf, TokenLabel::TLONG, t.line));
+        matched = true;
+      }
+      if (t.buf == "signed") {
+        tmp.push_back(Token(t.buf, TokenLabel::TSIGNED, t.line));
+        matched = true;
+      }
+      if (t.buf == "unsigned") {
+        tmp.push_back(Token(t.buf, TokenLabel::TUNSIGNED, t.line));
+        matched = true;
+      }
+      if (t.buf == "short") {
+        tmp.push_back(Token(t.buf, TokenLabel::TSHORT, t.line));
         matched = true;
       }
       if (t.buf == "int") {
@@ -312,8 +385,26 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
         tmp.push_back(Token(t.buf, TokenLabel::TCHAR, t.line));
         matched = true;
       }
+      if (t.buf == "struct") {
+        tmp.push_back(Token(t.buf, TokenLabel::TSTRUCT, t.line));
+        matched = true;
+      }
+      if (t.buf == "union") {
+        tmp.push_back(Token(t.buf, TokenLabel::TUNION, t.line));
+        matched = true;
+      }
+      if (t.buf == "enum") {
+        tmp.push_back(Token(t.buf, TokenLabel::TENUM, t.line));
+        matched = true;
+      }
       if (!matched) {
-        tmp.push_back(t);
+        // distinguish alpha and digit.
+        char leading = t.buf[0];
+        if (leading >= '0' && leading <= '9') {
+          tmp.push_back(Token(t.buf, TokenLabel::TDIGIT, t.line));
+        } else {
+          tmp.push_back(t);
+        }
       }
 
       i++;
