@@ -144,10 +144,14 @@ static size_t FindNextChar(const std::string &str, size_t from, char ch) {
     if (str[ret] == ch) {
       break;
     }
+    if (str[ret] == '\\') {
+      // skip one char.
+      ret ++;
+    }
     ret ++;
   }
 
-  return ret;
+  return ret > str.size() ? str.size() : ret;
 }
 
 static std::vector<Token> MergeEmptyTokens(std::vector<Token> &tokens);
@@ -570,6 +574,15 @@ static const char *block_type_names[] = {
   "var",
   "ret",
   "if-else",
+  "for",
+  "do",
+  "switch",
+  "case",
+  "break",
+  "continue",
+  "struct",
+  "union",
+  "enum",
 };
 
 auto BlockTypeToString(BlockType bt) -> std::string {
@@ -604,6 +617,15 @@ static void AddLabelForBlock(BasicBlock *root) {
     }
 
     switch (token.label) {
+    case (Lex::TokenLabel::TCASE):
+    case (Lex::TokenLabel::TDEFAULT): {
+      root->SetType(BlockType::BCASE);
+      return;
+    }
+    case (Lex::TokenLabel::TSWITCH): {
+      root->SetType(BlockType::BSWITCH);
+      break;
+    }
     case (Lex::TokenLabel::TVOID):
     case (Lex::TokenLabel::TINT):
     case (Lex::TokenLabel::TCHAR):
@@ -628,6 +650,22 @@ static void AddLabelForBlock(BasicBlock *root) {
       root->SetType(BlockType::BWHILE);
       return;
     }
+    case (Lex::TokenLabel::TDO): {
+      root->SetType(BlockType::BDO);
+      break;
+    }
+    case (Lex::TokenLabel::TFOR): {
+      root->SetType(BlockType::BFOR);
+      break;
+    }
+    case (Lex::TokenLabel::TBREAK): {
+      root->SetType(BlockType::BBREAK);
+      break;
+    }
+    case (Lex::TokenLabel::TCONTINUE): {
+      root->SetType(BlockType::BCONTINUE);
+      break;
+    }
     case (Lex::TokenLabel::TELSE): {
       root->SetType(BlockType::BELSE);
       return;
@@ -635,6 +673,19 @@ static void AddLabelForBlock(BasicBlock *root) {
     case (Lex::TokenLabel::TRETURN): {
       root->SetType(BlockType::BRET);
       return;
+    }
+
+    case (Lex::TokenLabel::TSTRUCT): {
+      root->SetType(BlockType::BSTRUCT);
+      break;
+    }
+    case (Lex::TokenLabel::TUNION): {
+      root->SetType(BlockType::BUNION);
+      break;
+    }
+    case (Lex::TokenLabel::TENUM): {
+      root->SetType(BlockType::BENUM);
+      break;
     }
 
     default: {
@@ -663,15 +714,32 @@ void BasicBlock::ReshapeBlock(BasicBlock *root) {
   while (i < num_children) {
     BasicBlock *child = root->children[i];
     switch (child->btype) {
+    case (BlockType::BDO): {
+      // do { do_something(); }
+      i += 1;
+      if (i < num_children) {
+        child->children.push_back(root->children[i]);
+      }
+
+      // while (some_cond);
+      i += 1;
+      if (i < num_children) {
+        child->children.push_back(root->children[i]);
+      }
+      break;
+    }
+
     case (BlockType::BFUNCTION):
     case (BlockType::BIF):
     case (BlockType::BELSE):
+    case (BlockType::BFOR):
     case (BlockType::BWHILE): {
       i += 1;
-      assert(i < num_children);
       // reparent the next basic block to this one.
       assert(child->children.size() == 0);
-      child->children.push_back(root->children[i]);
+      if (i < num_children) {
+        child->children.push_back(root->children[i]);
+      }
       break;
     }
 
@@ -761,6 +829,7 @@ static BasicBlock *CLangParseRecur(const std::vector<Lex::Token> &tokens,
       }
       *index += 1;
       BasicBlock *child = CLangParseRecur(tokens, index);
+      child->HasBracket();
       top->AddChild(child);
       break;
     }
@@ -778,6 +847,7 @@ static BasicBlock *CLangParseRecur(const std::vector<Lex::Token> &tokens,
     case Lex::TokenLabel::TSEMICOLON: {
       // finished this instruction
       // add it to the block
+      instr.tokens.push_back(tokens[*index]);
       if (!instr.tokens.empty()) {
         top->AddChild(new BasicBlock(instr));
         instr.tokens.clear();
@@ -835,7 +905,9 @@ auto BasicBlock::Print(std::ostream &os) const -> std::ostream & {
     os << TO_STD_STRING("\n");
     if (this->btype == BlockType::BCOMMON) {
       PrintIdent(os);
-      os << TO_STD_STRING("{\n");
+      if (this->has_bracket_) {
+        os << TO_STD_STRING("{\n");
+      }
     }
   
     ++ident;
@@ -846,7 +918,9 @@ auto BasicBlock::Print(std::ostream &os) const -> std::ostream & {
     --ident;
     if (this->btype == BlockType::BCOMMON) {
       PrintIdent(os);
-      os << TO_STD_STRING("}\n");
+      if (this->has_bracket_) {
+        os << TO_STD_STRING("}\n");
+      }
     }
   }
   return os;

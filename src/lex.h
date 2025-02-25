@@ -142,6 +142,16 @@ enum class BlockType {
   BVARDECLARE,
   BRET,
   BIFELSE,
+  BFOR,
+  BDO,
+  BSWITCH,
+  BCASE,
+  BBREAK,
+  BCONTINUE,
+  // types
+  BSTRUCT,
+  BUNION,
+  BENUM,
 };
 
 auto BlockTypeToString(BlockType bt) -> std::string;
@@ -158,6 +168,11 @@ class BasicBlock {
   }
 
   void AddChild(BasicBlock *child) { children.push_back(child); }
+
+  // Set the block to be bracketed.
+  void HasBracket() {
+    this->has_bracket_ = true;
+  }
 
   auto GetType(void) const -> BlockType { return this->btype; }
   // do not use this function
@@ -184,7 +199,7 @@ class BasicBlock {
   BlockType btype{BlockType::BCOMMON};
   Instruction instruction;
   std::vector<BasicBlock *> children;
-
+  bool has_bracket_{false};
 };
 
 // parser for c language
