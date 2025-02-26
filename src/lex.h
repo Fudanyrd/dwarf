@@ -60,6 +60,7 @@ enum class TokenLabel {
   TPIPE,  // |
   TOR,    // ||
   TFLIP, // ~
+  TXOR, // ^
   // supported types: bool, int, char, void
   TBOOL,
   TINT,

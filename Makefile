@@ -24,6 +24,9 @@ parse: $(SRC_OBJS) tool/parse.o
 tlex: $(SRC_OBJS) tool/tlex.o
 	$(CXX) $(LDFLAGS) tool/tlex.o $(SRC_OBJS) -o tlex
 
+funcs: $(SRC_OBJS) tool/funcs.o 
+	$(CXX) $(LDFLAGS) tool/funcs.o $(SRC_OBJS) -o funcs
+
 dw-demo: $(SRC_OBJS) tool/dw-example.o 
 	$(CXX) $(LDFLAGS) tool/dw-example.o $(SRC_OBJS) -o dw-demo
 

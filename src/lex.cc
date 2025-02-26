@@ -53,6 +53,7 @@ static const char *token_names[] = {
   "pipe",
   "or",
   "flip",
+  "xor",
   // supported types: bool, int, char, void
   "bool",
   "int",
@@ -119,6 +120,9 @@ static TokenLabel GetLabelOfChar(char ch) {
   }
   case ('#'): {
     return TokenLabel::TSHARP;
+  }
+  case ('^'): {
+    return TokenLabel::TXOR;
   }
 
   default: break;
@@ -785,10 +789,14 @@ void BasicBlock::ReshapeBlock(BasicBlock *root) {
     case (BlockType::BELSE):
     case (BlockType::BFOR):
     case (BlockType::BWHILE): {
-      i += 1;
+      // i += 1;
       // reparent the next basic block to this one.
       assert(child->children.size() == 0);
-      if (i < num_children) {
+      const auto &insn = child->instruction;
+      size_t l = insn.tokens.size();
+      if (i + 1 < num_children && l > 0 && 
+          insn.tokens[l - 1].label != Lex::TokenLabel::TSEMICOLON) {
+        i += 1;
         child->children.push_back(root->children[i]);
       }
       break;
@@ -943,7 +951,6 @@ static BasicBlock *CLangParseRecur(const std::vector<Lex::Token> &tokens,
 
   AddLabelForBlocks(top);
   BasicBlock::ReshapeBlockTree(top);
-  BasicBlock::MergeIfElseBlockTree(top);
   return top;
 }
 
