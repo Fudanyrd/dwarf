@@ -11,6 +11,10 @@
 *.o
 *.d
 *.out
+dw-demo
+funccopy
+funcs
+parse
 tlex
 
 #archives
