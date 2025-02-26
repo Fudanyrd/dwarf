@@ -678,7 +678,8 @@ static void AddLabelForBlock(BasicBlock *root) {
     case (Lex::TokenLabel::TCHAR):
     case (Lex::TokenLabel::TBOOL): {
       // function declaration or definition
-      if (Tokens.size() > 3 && Tokens[2].label == Lex::TokenLabel::TLEFTPARENT) {
+      size_t ln = Tokens.size();
+      if (Tokens.size() > 3 && Tokens[ln - 1].label != Lex::TokenLabel::TSEMICOLON) {
         // is a function declaration, for example:
         // int func (
         root->SetType(BlockType::BFUNCTION);
@@ -857,6 +858,26 @@ void BasicBlock::MergeIfElseBlockTree(BasicBlock *root) {
     MergeIfElseBlockTree(child);
   }
   MergeIfElseBlock(root);
+}
+
+auto BasicBlock::GetLineRange() const -> std::pair<size_t, size_t> {
+  std::pair<size_t, size_t> ret = {-1, 0};
+  if (!this->instruction.tokens.empty()) {
+    ret = this->instruction.GetLineRange();
+  }
+
+  for (auto *child : this->children) {
+    auto rg = child->GetLineRange();
+    if (rg.first < ret.first) {
+      ret.first = rg.first;
+    }
+    if (rg.second > ret.second) {
+      ret.second = rg.second;
+    }
+  }
+
+  assert(ret.first <= ret.second);
+  return ret;
 }
 
 static BasicBlock *CLangParseRecur(const std::vector<Lex::Token> &tokens, 

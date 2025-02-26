@@ -138,6 +138,21 @@ struct Instruction {
   auto GetTypeOfToken(size_t idx) const -> Lex::TokenLabel {
     return idx < tokens.size() ? tokens[idx].label : Lex::TokenLabel::TNULL;
   }
+
+  auto GetLineRange() const -> std::pair<size_t, size_t> {
+    std::pair<size_t, size_t> ret = {-1, 0};
+    for (const auto &token : tokens) {
+      if (token.line > ret.second) {
+        ret.second = token.line;
+      }
+      if (token.line < ret.first) {
+        ret.first = token.line;
+      }
+    }
+
+    assert(ret.first <= ret.second);
+    return ret;
+  }
 };
 
 enum class BlockType {
@@ -201,6 +216,8 @@ class BasicBlock {
   static void ReshapeBlockTree(BasicBlock *root);
   static void MergeIfElseBlock(BasicBlock *root);
   static void MergeIfElseBlockTree(BasicBlock *root);
+
+  auto GetLineRange() const -> std::pair<size_t, size_t>;
 
  private:
   BlockType btype{BlockType::BCOMMON};
