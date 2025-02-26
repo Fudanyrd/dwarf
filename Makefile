@@ -10,9 +10,16 @@ SRC_HEADERS = $(shell find src/ -name '*.h')
 OBJS = $(shell find -name '*.o')
 # probably output of tlex
 CSV = $(shell find -name '*.csv')
+PROGS = tokenize parse tlex dw-demo
 
 %.o: %.cc $(SRC_HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+tokenize: $(SRC_OBJS) tool/tokenizer.o
+	$(CXX) $(LDFLAGS) tool/tokenizer.o $(SRC_OBJS) -o tokenize
+
+parse: $(SRC_OBJS) tool/parse.o
+	$(CXX) $(LDFLAGS) tool/parse.o $(SRC_OBJS) -o parse 
 
 tlex: $(SRC_OBJS) tool/tlex.o
 	$(CXX) $(LDFLAGS) tool/tlex.o $(SRC_OBJS) -o tlex
@@ -22,7 +29,7 @@ dw-demo: $(SRC_OBJS) tool/dw-example.o
 
 .PHONY: clean
 clean:
-	-rm -f $(OBJS) $(CSV) tlex *.tar.gz
+	-rm -f $(OBJS) $(CSV) tlex *.tar.gz $(PROGS)
 
 .PHONY: archive
 archive: clean
@@ -37,4 +44,4 @@ run: tlex syscall.o
 syscall.o: tests/syscall.S
 	as -g tests/syscall.S -o syscall.o
 
-all: dw-demo tlex
+all: $(PROGS)
