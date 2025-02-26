@@ -145,15 +145,18 @@ static bool IsIdentifier(char ch) {
 static size_t FindNextChar(const std::string &str, size_t from, char ch) {
   size_t ret = from + 1;
   while (ret < str.size()) {
-    if (str[ret] == '\n') {
-      lno++;
-    }
     if (str[ret] == ch) {
       break;
+    }
+    if (str[ret] == '\n') {
+      lno++;
     }
     if (str[ret] == '\\') {
       // skip one char.
       ret ++;
+      if (str[ret] == '\n') {
+        lno ++;
+      }
     }
     ret ++;
   }
