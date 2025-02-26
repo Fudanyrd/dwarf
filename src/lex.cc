@@ -887,7 +887,6 @@ auto BasicBlock::GetLineRange() const -> std::pair<size_t, size_t> {
     }
   }
 
-  assert(ret.first <= ret.second);
   return ret;
 }
 
@@ -970,9 +969,6 @@ auto BasicBlock::Print(std::ostream &os) const -> std::ostream & {
   //        this->children.empty());
 
   PrintIdent(os);
-  os << TO_STD_STRING("/* ");
-  os << BlockTypeToString(this->btype);
-  os << TO_STD_STRING(" */ ");
   if (!this->instruction.tokens.empty()) {
     this->instruction.Print(os);
     // return os;

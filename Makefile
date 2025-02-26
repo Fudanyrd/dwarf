@@ -10,7 +10,7 @@ SRC_HEADERS = $(shell find src/ -name '*.h')
 OBJS = $(shell find -name '*.o')
 # probably output of tlex
 CSV = $(shell find -name '*.csv')
-PROGS = tokenize parse tlex dw-demo
+PROGS = tokenize parse tlex dw-demo funccopy
 
 %.o: %.cc $(SRC_HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
@@ -26,6 +26,9 @@ tlex: $(SRC_OBJS) tool/tlex.o
 
 funcs: $(SRC_OBJS) tool/funcs.o 
 	$(CXX) $(LDFLAGS) tool/funcs.o $(SRC_OBJS) -o funcs
+
+funccopy: $(SRC_OBJS) tool/funccopy.o 
+	$(CXX) $(LDFLAGS) tool/funccopy.o $(SRC_OBJS) -o funccopy
 
 dw-demo: $(SRC_OBJS) tool/dw-example.o 
 	$(CXX) $(LDFLAGS) tool/dw-example.o $(SRC_OBJS) -o dw-demo
