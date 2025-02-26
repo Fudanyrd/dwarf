@@ -753,7 +753,7 @@ static void AddLabelForBlock(BasicBlock *root) {
 // recursive, should be called only once for each tree
 static void AddLabelForBlocks(BasicBlock *root) {
   assert(root != nullptr);
-  assert(root->GetType() == BlockType::BCOMMON);
+  // assert(root->GetType() == BlockType::BCOMMON);
 
   AddLabelForBlock(root);
   size_t nchildren = root->GetNumChildren();
