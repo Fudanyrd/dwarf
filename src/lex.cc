@@ -49,6 +49,10 @@ static const char *token_names[] = {
   "question",
   "colon",
   "sharp",
+  "and",
+  "pipe",
+  "or",
+  "flip",
   // supported types: bool, int, char, void
   "bool",
   "int",
@@ -74,7 +78,10 @@ static const char *token_names[] = {
   // struct, union, enum
   "struct",
   "union",
-  "enum"
+  "enum",
+  // life time.
+  "static",
+  "extern",
 };
 
 const char *GetNameOfLabel(TokenLabel label) {
@@ -192,6 +199,14 @@ auto CLangTokenize(const std::string &fobj, bool IgnoreNull) -> std::vector<Toke
         size_t j = FindNextChar(fobj, i, ch);
         j++;
         tokens.push_back({fobj.substr(i, j - i), TokenLabel::TDOUBLEQUOTE, oldno});
+        i = j;
+        break;
+      }
+
+      // preprocessor commands.
+      case '#': {
+        size_t j = FindNextChar(fobj, i, '\n');
+        tokens.push_back({fobj.substr(i, j - i), TokenLabel::TNULL, oldno});
         i = j;
         break;
       }
@@ -401,6 +416,14 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
         tmp.push_back(Token(t.buf, TokenLabel::TENUM, t.line));
         matched = true;
       }
+      if (t.buf == "static") {
+        tmp.push_back(Token(t.buf, TokenLabel::TSTATIC, t.line));
+        matched = true;
+      }
+      if (t.buf == "extern") {
+        tmp.push_back(Token(t.buf, TokenLabel::TEXTERN, t.line));
+        matched = true;
+      }
       if (!matched) {
         // distinguish alpha and digit.
         char leading = t.buf[0];
@@ -439,13 +462,14 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
         i++;
         break;
       }
-      case ('&'): {
-        tmp.push_back(Token(t.buf, TokenLabel::TADRP, t.line));
-        i++; break;
-      }
       case (','): {
         tmp.push_back(Token(t.buf, TokenLabel::TCOMMA, t.line));
         i++; break;
+      }
+      case ('~'): {
+        tmp.push_back(Token(t.buf, TokenLabel::TFLIP, t.line));
+        i++;
+        break;
       }
 
       case ('+'): {
@@ -536,6 +560,29 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
           i++;
         }
 
+        break;
+      }
+
+      case ('&'): {
+        if (next.buf == "&") {
+          // is &&
+          tmp.push_back(Token("&&", TokenLabel::TAND, t.line));
+          i += 2;
+        } else {
+          // is &
+          tmp.push_back(Token(t.buf, TokenLabel::TADRP, t.line));
+          i ++;
+        }
+        break;
+      }
+      case ('|'): {
+        if (next.buf == "|") {
+          tmp.push_back(Token("||", TokenLabel::TOR, t.line));
+          i += 2;
+        } else {
+          tmp.push_back(Token(t.buf, TokenLabel::TPIPE, t.line));
+          i ++;
+        }
         break;
       }
 
@@ -1976,3 +2023,26 @@ auto X86Generator::StoreArgsIntoMem(std::ostringstream &os, const Parser::Instru
 }
 
 } // namespace Generator
+
+namespace BugInsertor {
+
+auto WrongOperator(const std::vector<Lex::Token> &src, size_t count)
+  -> InsertionResult {
+  InsertionResult ret;
+  ret.first = false;
+  return ret;
+
+  // Replacement policy:
+  // (==, !=) to (=)
+  // (>, >=) as (<, <=) and vice versa
+  // (++) as (--), and vice versa
+  // (+=) as (-=), and vice versa
+  // && as &
+  // || as |
+  // ! as ~, and vice versa
+
+  // size_t num_insertion_point = 0;
+  // size_t i = 0;
+}
+
+} // namespace BugInsertor

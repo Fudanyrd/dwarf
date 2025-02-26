@@ -2,12 +2,27 @@
 // NOTE: a lot of corner cases are covered.
 #include <foo>
 
-enum {};
+#define FOO do { \
+    abort(); \
+  } while (0)
 
-int main() {
+enum {
+  none = 0,
+};
+
+static char buf[12];
+extern int count;
+
+int main(int argc, char **argv) {
   unsigned long i = 0;
   signed int j = 1;
-  int *pt = 0, "foo", 'b';
+  int *pt = 0, "f\'o\"o", '\\b';
+
+  i = i && j;
+  j = ~j;
+  i = i || j;
+  j = j & i;
+  i = i | j;
 
   struct some {
     int i;
