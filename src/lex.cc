@@ -54,6 +54,14 @@ static const char *token_names[] = {
   "or",
   "flip",
   "xor",
+  "add=",
+  "sub=",
+  "mult=",
+  "div=",
+  "rem=",
+  "and=",
+  "xor=",
+  "or=",
   // supported types: bool, int, char, void
   "bool",
   "int",
@@ -120,9 +128,6 @@ static TokenLabel GetLabelOfChar(char ch) {
   }
   case ('#'): {
     return TokenLabel::TSHARP;
-  }
-  case ('^'): {
-    return TokenLabel::TXOR;
   }
 
   default: break;
@@ -450,18 +455,43 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
       assert(t.buf.size() == 1);
       switch (t.buf[0]) {
       case ('/'): {
-        tmp.push_back(Token(t.buf, TokenLabel::TDIV, t.line));
-        i++;
+        if (next.buf == "=") {
+          tmp.push_back(Token("/=", TokenLabel::TDIVBY, t.line));
+          i += 2;
+        } else {
+          tmp.push_back(Token(t.buf, TokenLabel::TDIV, t.line));
+          i++;
+        }
         break;
       }
       case ('%'): {
-        tmp.push_back(Token(t.buf, TokenLabel::TREM, t.line));
-        i++;
+        if (next.buf == "=") {
+          tmp.push_back(Token("%=", TokenLabel::TREMBY, t.line));
+          i += 2;
+        } else {
+          tmp.push_back(Token(t.buf, TokenLabel::TREM, t.line));
+          i++;
+        }
         break;
       }
       case ('*'): {
-        tmp.push_back(Token(t.buf, TokenLabel::TMUL, t.line));
-        i++;
+        if (next.buf == "=") {
+          tmp.push_back(Token("*=", TokenLabel::TMULBY, t.line));
+          i += 2;
+        } else {
+          tmp.push_back(Token(t.buf, TokenLabel::TMUL, t.line));
+          i++;
+        }
+        break;
+      }
+      case ('^'): {
+        if (next.buf == "=") {
+          tmp.push_back(Token("^=", TokenLabel::TXORBY, t.line));
+          i += 2;
+        } else {
+          tmp.push_back(Token(t.buf, TokenLabel::TXOR, t.line));
+          i++;
+        }
         break;
       }
       case ('.'): {
@@ -480,11 +510,14 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
       }
 
       case ('+'): {
-        // should handle + and ++
+        // should handle +, += and ++
         if (next.buf == "+") {
           // is ++
           assert(next.label == TokenLabel::TOPERATOR);
           tmp.push_back(Token("++", TokenLabel::TINCR, t.line));
+          i += 2;
+        } else if (next.buf == "=") {
+          tmp.push_back(Token("+=", TokenLabel::TADDBY, t.line));
           i += 2;
         } else {
           // is +
@@ -495,7 +528,7 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
       }
 
       case ('-'): {
-        // should handle -, --, ->
+        // should handle -, --, ->, -=
         if (next.buf == "-") {
           // is --
           assert(next.label == TokenLabel::TOPERATOR);
@@ -505,6 +538,9 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
           // is ->
           assert(next.label == TokenLabel::TOPERATOR);
           tmp.push_back(Token("->", TokenLabel::TARROW, t.line));
+          i += 2;
+        } else if (next.buf == "=") {
+          tmp.push_back(Token("-=", TokenLabel::TSUBBY, t.line));
           i += 2;
         } else {
           // is -
@@ -575,6 +611,9 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
           // is &&
           tmp.push_back(Token("&&", TokenLabel::TAND, t.line));
           i += 2;
+        } else if (next.buf == "=") {
+          tmp.push_back(Token("&=", TokenLabel::TANDBY, t.line));
+          i += 2;
         } else {
           // is &
           tmp.push_back(Token(t.buf, TokenLabel::TADRP, t.line));
@@ -585,6 +624,9 @@ static void ReLabelTokens(std::vector<Token> &tokens) {
       case ('|'): {
         if (next.buf == "|") {
           tmp.push_back(Token("||", TokenLabel::TOR, t.line));
+          i += 2;
+        } else if (next.buf == "=") {
+          tmp.push_back(Token("|=", TokenLabel::TORBY, t.line));
           i += 2;
         } else {
           tmp.push_back(Token(t.buf, TokenLabel::TPIPE, t.line));

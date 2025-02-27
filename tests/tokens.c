@@ -10,6 +10,56 @@ enum {
   none = 0,
 };
 
+static char *about_the_author = "I\'m the author of this \
+dwarf project. My name is @Fudanyrd. \
+Glad to meet you!.";
+
+/* Check for operators, like +, ++, +=, etc. */
+int and(int x, int y) {
+  int ret = x & y;
+  ret = x; 
+  ret &= y;
+  return ret;
+}
+
+int or(int x, int y) {
+  int ret = x | y;
+  ret = x; 
+  ret |= y;
+  return ret;
+}
+
+int xor(int x, int y) {
+  int ret = x ^ y;
+  ret = x; 
+  ret ^= y;
+  return ret;
+}
+
+int add(int x, int y) {
+  int ret = x;
+  ret += y;
+  ret ++; ret--;
+  return ret;
+}
+
+int mult(int x, int y) {
+  int ret = x * y;
+  x *= y;
+  return ret;
+}
+int div(int x, int y) {
+  int ret = x / y;
+  x /= y;
+  return ret;
+}
+
+int sub(int x, int y) {
+  int ret = x;
+  x -= y;
+  return ret;
+}
+
 static char buf[12];
 extern int count;
 

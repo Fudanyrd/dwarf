@@ -61,6 +61,14 @@ enum class TokenLabel {
   TOR,    // ||
   TFLIP, // ~
   TXOR, // ^
+  TADDBY, // +=
+  TSUBBY, // -=
+  TMULBY, // *=
+  TDIVBY, // /=
+  TREMBY, // %= 
+  TANDBY, // &=
+  TXORBY, // ^=
+  TORBY, // |=
   // supported types: bool, int, char, void
   TBOOL,
   TINT,
