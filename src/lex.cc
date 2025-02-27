@@ -1019,11 +1019,9 @@ auto BasicBlock::Print(std::ostream &os) const -> std::ostream & {
   if (!this->children.empty()) {
 
     os << TO_STD_STRING("\n");
-    if (this->btype == BlockType::BCOMMON) {
+    if (this->has_bracket_) {
       PrintIdent(os);
-      if (this->has_bracket_) {
-        os << TO_STD_STRING("{\n");
-      }
+      os << TO_STD_STRING("{\n");
     }
   
     ++ident;
@@ -1032,11 +1030,17 @@ auto BasicBlock::Print(std::ostream &os) const -> std::ostream & {
     }
   
     --ident;
-    if (this->btype == BlockType::BCOMMON) {
+    if (this->has_bracket_) {
       PrintIdent(os);
-      if (this->has_bracket_) {
-        os << TO_STD_STRING("}\n");
-      }
+      os << TO_STD_STRING("}\n");
+    }
+  } else {
+    if (this->has_bracket_) {
+      ++ident;
+      os << TO_STD_STRING("\n");
+      PrintIdent(os);
+      os << TO_STD_STRING("{ }\n");
+      --ident;
     }
   }
   return os;
