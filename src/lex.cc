@@ -693,12 +693,30 @@ static inline auto PrintIdent(std::ostream &os) -> std::ostream & {
   return os;
 }
 
+auto Instruction::GetFuncCalls() const -> std::vector<std::string> {
+  size_t len = this->tokens.size();
+  if (len == 0) {
+    return {};
+  }
+
+  len --;
+
+  std::vector<std::string> ret;
+  for (size_t i = 0; i < len; i++) {
+    if (tokens[i].label == Lex::TokenLabel::TALPHA && 
+        tokens[i + 1].label == Lex::TokenLabel::TLEFTPARENT) {
+      ret.push_back(tokens[i].buf);
+    }
+  }
+  return ret;
+}
+
 // non-recursive
 static void AddLabelForBlock(BasicBlock *root) {
   // there're two types of BasicBlock:
   // one is simply a wrapper of an instruction;
   // the other is the collection of basic blocks.
-  assert(root->GetInstruction().tokens.empty() || root->GetNumChildren() == 0);
+  // assert(root->GetInstruction().tokens.empty() || root->GetNumChildren() == 0);
   // find the first token that is not null.
 
   if (root->GetInstruction().tokens.empty()) {

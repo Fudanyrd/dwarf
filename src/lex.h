@@ -148,6 +148,10 @@ struct Instruction {
     return idx < tokens.size() ? tokens[idx].label : Lex::TokenLabel::TNULL;
   }
 
+  // Returns names of called func inside this instruction.
+  // WARN: may not be correct.
+  auto GetFuncCalls(void) const -> std::vector<std::string>;
+
   auto GetLineRange() const -> std::pair<size_t, size_t> {
     std::pair<size_t, size_t> ret = {-1, 0};
     for (const auto &token : tokens) {

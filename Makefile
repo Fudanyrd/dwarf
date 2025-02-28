@@ -1,7 +1,8 @@
 CXX=g++
 PWD=$(shell pwd)
-CXXFLAGS = -fsanitize=address -g -std=c++11 -MD -O2 -Wall -I$(PWD)
+CXXFLAGS = -fsanitize=address -g -std=c++11 -MD -O2 -Wall
 LDFLAGS = -fsanitize=address -g
+INCLUDES=-I$(PWD)
 
 #include src/Makefile
 SRC_OBJS = src/lex.o src/utils.o src/dwarf.o
@@ -10,10 +11,10 @@ SRC_HEADERS = $(shell find src/ -name '*.h')
 OBJS = $(shell find -name '*.o')
 # probably output of tlex
 CSV = $(shell find -name '*.csv')
-PROGS = tokenize parse tlex dw-demo funccopy
+PROGS = tokenize parse tlex dw-demo funccopy fntree
 
 %.o: %.cc $(SRC_HEADERS)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 tokenize: $(SRC_OBJS) tool/tokenizer.o
 	$(CXX) $(LDFLAGS) tool/tokenizer.o $(SRC_OBJS) -o tokenize
@@ -26,6 +27,9 @@ tlex: $(SRC_OBJS) tool/tlex.o
 
 funcs: $(SRC_OBJS) tool/funcs.o 
 	$(CXX) $(LDFLAGS) tool/funcs.o $(SRC_OBJS) -o funcs
+
+fntree: $(SRC_OBJS) tool/fntree.o 
+	$(CXX) $(LDFLAGS) tool/fntree.o $(SRC_OBJS) -o fntree
 
 funccopy: $(SRC_OBJS) tool/funccopy.o 
 	$(CXX) $(LDFLAGS) tool/funccopy.o $(SRC_OBJS) -o funccopy
