@@ -25,8 +25,14 @@ int main(int argc, char **argv, char **envp) {
     auto *child = root->GetChild(i);
     if (child->GetType() == Parser::BlockType::BFUNCTION) {
       auto rg = child->GetLineRange();
-      const auto insn = child->GetInstruction();
-      insn.Print(std::cout);
+      const auto &insn = child->GetInstrAsRef();
+      const auto fns = insn.GetFuncCalls();
+      if (fns.size()) {
+        printf("%s", fns[0].c_str());
+      }
+      else {
+        printf("(\?\?)");
+      }
       printf(", %lu, %lu\n",  rg.first, rg.second);
     }
   }
