@@ -152,6 +152,10 @@ struct Instruction {
   // WARN: may not be correct.
   auto GetFuncCalls(void) const -> std::vector<std::string>;
 
+  // Returns names of variables inside this instruction.
+  // WARN: may not be correct.
+  auto GetVarNames(void) const -> std::vector<std::string>;
+
   auto GetLineRange() const -> std::pair<size_t, size_t> {
     std::pair<size_t, size_t> ret = {-1, 0};
     for (const auto &token : tokens) {

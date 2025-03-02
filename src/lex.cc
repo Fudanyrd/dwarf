@@ -711,6 +711,29 @@ auto Instruction::GetFuncCalls() const -> std::vector<std::string> {
   return ret;
 }
 
+auto Instruction::GetVarNames(void) const -> std::vector<std::string> {
+  size_t len = this->tokens.size();
+  if (len == 0) {
+    return {};
+  }
+
+  std::vector<std::string> ret;
+  for (size_t i = 0; i < len; i++) {
+    auto prev = i ? this->GetTypeOfToken(i - 1) : Lex::TokenLabel::TNULL;
+    auto cur = this->GetTypeOfToken(i);
+    auto next = this->GetTypeOfToken(i + 1);
+
+    if (prev != Lex::TokenLabel::TDOT 
+     && prev != Lex::TokenLabel::TARROW // check that `cur` is not a member of struct.
+     && cur == Lex::TokenLabel::TALPHA // check this is not a func call.
+     && next != Lex::TokenLabel::TLEFTPARENT) {
+      ret.push_back(tokens[i].buf);
+    } 
+  }
+
+  return ret;
+}
+
 // non-recursive
 static void AddLabelForBlock(BasicBlock *root) {
   // there're two types of BasicBlock:

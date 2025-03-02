@@ -11,7 +11,7 @@ SRC_HEADERS = $(shell find src/ -name '*.h')
 OBJS = $(shell find -name '*.o')
 # probably output of tlex
 CSV = $(shell find -name '*.csv')
-PROGS = tokenize parse tlex dw-demo funccopy fntree
+PROGS = tokenize parse tlex dw-demo funccopy funcs fntree vartree
 
 %.o: %.cc $(SRC_HEADERS)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
@@ -33,6 +33,9 @@ fntree: $(SRC_OBJS) tool/fntree.o
 
 funccopy: $(SRC_OBJS) tool/funccopy.o 
 	$(CXX) $(LDFLAGS) tool/funccopy.o $(SRC_OBJS) -o funccopy
+
+vartree: $(SRC_OBJS) tool/vartree.o 
+	$(CXX) $(LDFLAGS) tool/vartree.o $(SRC_OBJS) -o vartree
 
 dw-demo: $(SRC_OBJS) tool/dw-example.o 
 	$(CXX) $(LDFLAGS) tool/dw-example.o $(SRC_OBJS) -o dw-demo
