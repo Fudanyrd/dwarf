@@ -18,4 +18,17 @@ auto ReadAll(const char *filename) -> std::string;
  */
 auto Atoi(const std::string &str) -> long;
 
+// Remove the first ocurrence of `val` in `vec`.
+template <typename T>
+void RemoveFromVec(std::vector<T> &vec, T val) {
+    typename std::vector<T>::iterator it = vec.begin();
+    while (it != vec.end()) {
+        if (*it == val) {
+            vec.erase(it);
+            break;
+        }
+        it ++;
+    }
+}
+
 #endif

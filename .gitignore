@@ -17,6 +17,7 @@ funccopy
 funcs
 parse
 tlex
+brcont
 
 #archives
 *.tar.gz

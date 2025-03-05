@@ -2,6 +2,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <fcntl.h>
+#include <cstring>
 
 auto EncodeString(const std::string &str) -> std::string {
     std::ostringstream ss;
@@ -63,7 +64,8 @@ auto ReadAll(const char *filename) -> std::string {
     std::ostringstream ss;
     static char buf[512];
 
-    int fd = open(filename, O_RDONLY);
+    // if file name is -, read from stdin.
+    int fd = strcmp("-", filename) ? open(filename, O_RDONLY) : 0;
     if (fd < 0) {
         throw std::runtime_error("Failed to open file");
     }

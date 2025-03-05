@@ -2140,23 +2140,45 @@ auto X86Generator::StoreArgsIntoMem(std::ostringstream &os, const Parser::Instru
 
 namespace BugInsertor {
 
-auto WrongOperator(const std::vector<Lex::Token> &src, size_t count)
-  -> InsertionResult {
-  InsertionResult ret;
-  ret.first = false;
-  return ret;
+static auto BreakOrContExec(Parser::BasicBlock *bb, size_t *cur, size_t count) 
+  -> bool {
+  if (*cur > count) {
+    return false;
+  }
 
-  // Replacement policy:
-  // (==, !=) to (=)
-  // (>, >=) as (<, <=) and vice versa
-  // (++) as (--), and vice versa
-  // (+=) as (-=), and vice versa
-  // && as &
-  // || as |
-  // ! as ~, and vice versa
+  const auto &instr = bb->GetInstrAsRef();
+  const auto instp = instr.GetTypeOfToken(0);
 
-  // size_t num_insertion_point = 0;
-  // size_t i = 0;
+  if (instp == Lex::TokenLabel::TCONTINUE ||
+      instp == Lex::TokenLabel::TBREAK) {
+    
+    if (*cur == count) {
+      // remove this instr.
+      auto &instr_mut = bb->GetInstrAsRefMut();
+      instr_mut.tokens.clear();
+      instr_mut.tokens.push_back(Lex::Token("", Lex::TokenLabel::TNULL, 0));
+      bb->SetType(Parser::BlockType::BCOMMON);
+      return true;
+    } else {
+      *cur = *cur + 1;
+    }
+  }
+
+  const auto num_children = bb->GetNumChildren();
+  for (size_t i = 0; i < num_children; i++) {
+    auto ret = BreakOrContExec(bb->GetChild(i), cur, count);
+    if (ret) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+auto MissingBreakOrCont(Parser::BasicBlock *bb, size_t count)
+  -> bool {
+  size_t idx = 0;
+  return BreakOrContExec(bb, &idx, count);
 }
 
 } // namespace BugInsertor

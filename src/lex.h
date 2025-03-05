@@ -220,6 +220,7 @@ class BasicBlock {
   auto GetInstruction(void) const -> Instruction { return this->instruction; }
 
   auto GetInstrAsRef(void) const -> const Instruction & { return this->instruction; }
+  auto GetInstrAsRefMut(void) -> Instruction & { return this->instruction; }
 
   auto GetChild(size_t idx) const -> BasicBlock * { return children[idx]; }
 
@@ -548,30 +549,8 @@ class X86Generator : public CodeGenerator {
 // Insert some bug patterns to the source code.
 namespace BugInsertor {
 
-// result of bug insertion.
-using InsertionResult = std::pair<bool, std::vector<Lex::Token>>;
-
-// Programmers may confuse `break` with `continue` in loops.
-// We randomly replace a `break` with `continue`, and vice versa.
-auto SwapBreakAndContinue(const std::vector<Lex::Token> &src, size_t count)
-  -> InsertionResult;
-
-// Remove a return statement will probably introduce bug.
-auto MissingReturn(const std::vector<Lex::Token> &src, size_t count)
-  -> InsertionResult;
-
-// Remove a `break` statement in `switch`.
-auto MissingBreakInSwitch(const std::vector<Lex::Token> &src, size_t count)
-  -> InsertionResult;
-
-// Replace a variable with another will introduce bug.
-auto WrongVariable(const std::vector<Lex::Token> &src, size_t count)
-  -> InsertionResult;
-
-// Incorrect use of operator, for example, = as ==
-// is probably a bug.
-auto WrongOperator(const std::vector<Lex::Token> &src, size_t count)
-  -> InsertionResult;
+auto MissingBreakOrCont(Parser::BasicBlock *bb, size_t count)
+  -> bool;
 
 } // namespace BugInsertor
 

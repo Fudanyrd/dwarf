@@ -19,6 +19,9 @@ PROGS = tokenize parse tlex dw-demo funccopy funcs fntree vartree
 tokenize: $(SRC_OBJS) tool/tokenizer.o
 	$(CXX) $(LDFLAGS) tool/tokenizer.o $(SRC_OBJS) -o tokenize
 
+brcont: $(SRC_OBJS) tool/brcont.o
+	$(CXX) $(LDFLAGS) tool/brcont.o $(SRC_OBJS) -o brcont
+
 parse: $(SRC_OBJS) tool/parse.o
 	$(CXX) $(LDFLAGS) tool/parse.o $(SRC_OBJS) -o parse 
 
